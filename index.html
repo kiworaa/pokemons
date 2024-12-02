@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokemon Animation</title>
+  <style>
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: linear-gradient(to bottom, #87CEEB, #FFFFFF);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="animationCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('animationCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+
+    // Загрузка изображений
+    const images = {
+      pokeballClosed: new Image(),
+      pokeballOpen: new Image(),
+      gengar: new Image(),
+      haunter: new Image(),
+      venomoth: new Image(),
+      parasect: new Image(),
+      metagross: new Image(),
+    };
+
+    images.pokeballClosed.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';
+    images.pokeballOpen.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png';
+    images.gengar.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png';
+    images.haunter.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/93.png';
+    images.venomoth.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/49.png';
+    images.parasect.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/47.png';
+    images.metagross.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/376.png';
+
+    // Настройки покебола
+    const pokeball = { x: WIDTH / 2 - 32, y: HEIGHT / 2 - 32, size: 64, open: false };
+
+    // Список покемонов
+    const pokemon = [
+      { img: images.gengar, name: "Gengar", x: WIDTH / 2 - 64, y: HEIGHT / 2, size: 128, jump: -20, visible: false },
+      { img: images.haunter, name: "Haunter", x: WIDTH / 2 - 64, y: HEIGHT / 2, size: 128, jump: -20, visible: false },
+      { img: images.venomoth, name: "Venomoth", x: WIDTH / 2 - 64, y: HEIGHT / 2, size: 128, jump: -20, visible: false },
+      { img: images.parasect, name: "Parasect", x: WIDTH / 2 - 64, y: HEIGHT / 2, size: 128, jump: -20, visible: false },
+      { img: images.metagross, name: "Metagross", x: WIDTH / 2 - 64, y: HEIGHT / 2, size: 128, jump: -20, visible: false },
+    ];
+
+    let frame = 0;
+    let currentPokemon = 0;
+    let jumpPhase = 0;
+    let glowingAlpha = 0;
+    let fadingIn = true;
+
+    // Событие для запуска анимации
+    window.addEventListener('keydown', () => {
+      if (!pokeball.open && currentPokemon < pokemon.length) {
+        pokeball.open = true;
+        pokemon[currentPokemon].visible = true;
+        jumpPhase = 0; // Сброс прыжка
+        glowingAlpha = 0; // Сброс свечения имени
+        fadingIn = true; // Начать с увеличения яркости имени
+      }
+    });
+
+    // Анимация
+    function animate() {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+      // Рисуем покебол (открытый или закрытый)
+      const pokeballImage = pokeball.open ? images.pokeballOpen : images.pokeballClosed;
+      ctx.drawImage(pokeballImage, pokeball.x, pokeball.y, pokeball.size, pokeball.size);
+
+      // Показ покемона
+      if (pokeball.open && pokemon[currentPokemon]) {
+        const poke = pokemon[currentPokemon];
+
+        // Эффект прыжка
+        jumpPhase += 0.1;
+        const jumpOffset = Math.sin(jumpPhase) * 20;
+        const sizeOffset = 10 * Math.sin(jumpPhase);
+
+        ctx.drawImage(
+          poke.img,
+          poke.x,
+          poke.y + poke.jump + jumpOffset,
+          poke.size + sizeOffset,
+          poke.size - sizeOffset
+        );
+
+        // Отображение имени
+        if (poke.visible) {
+          ctx.font = "24px Arial";
+          ctx.textAlign = "center";
+          ctx.fillStyle = `rgba(255, 215, 0, ${glowingAlpha})`;
+          ctx.fillText(poke.name, WIDTH / 2, HEIGHT / 2 - 100);
+
+          // Эффект свечения имени
+          if (fadingIn) {
+            glowingAlpha += 0.02;
+            if (glowingAlpha >= 1) fadingIn = false;
+          } else {
+            glowingAlpha -= 0.02;
+            if (glowingAlpha <= 0) fadingIn = true;
+          }
+        }
+
+        // Завершаем прыжок через 120 кадров
+        if (frame % 120 === 0) {
+          poke.visible = false;
+          pokeball.open = false;
+          currentPokemon++;
+        }
+      }
+
+      frame++;
+      requestAnimationFrame(animate);
+    }
+
+    // Загрузка изображений перед началом
+    const loadImages = () => {
+      const promises = Object.values(images).map(img => new Promise((resolve) => {
+        img.onload = resolve;
+      }));
+      return Promise.all(promises);
+    };
+
+    loadImages().then(() => {
+      animate();
+    });
+  </script>
+</body>
+</html>
